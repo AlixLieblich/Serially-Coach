@@ -1,5 +1,20 @@
-## Next.js App Router Course - Starter
+## Serially Coach
 
-This is the starter template for the Next.js App Router Course. It contains the starting code for the dashboard application.
+A place for Coach bag owners to easily find out what secrets their serial numbers contain.
 
-For more information, see the [course curriculum](https://nextjs.org/learn) on the Next.js Website.
+MVP
+V1
+Landing page where insert serial number and get back style, month, year, place of creation for simple serial numbers (XXX-XXXX)
+Page with decoding explanation
+Database set up
+V2
+Landing page where insert serial number and get back style, month, year, place of creation for ALL serial numbers
+V3
+Able to have an account to save your bags
+V4
+Social space?
+Image upload
+Colors? 
+Page with table of style numbers? Colors?
+Tbd! ^^
+
