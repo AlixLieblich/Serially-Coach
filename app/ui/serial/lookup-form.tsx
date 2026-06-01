@@ -5,7 +5,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { lookupSerial } from '@/app/lib/actions';
 import { Button } from '@/app/ui/button';
 
-export default function Form() {
+export default function SerialLookupForm() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
