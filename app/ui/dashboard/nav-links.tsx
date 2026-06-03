@@ -6,30 +6,47 @@ import {
   DocumentDuplicateIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 
-// Map of links to display in the side navigation.
-// Depending on the size of the application, this would be stored in a database.
-const links = [
-  { name: 'Home', href: '/', icon: HomeIcon },
-  { name: 'Uncover Your Bag', href: '/dashboard', icon: MagnifyingGlassIcon },
-  {
-    name: 'Serial Number Guide',
-    href: '/dashboard/guide',
-    icon: DocumentDuplicateIcon,
-  },
-  { name: 'conditional if logged in [v2] My Bags', href: '/dashboard/bags', icon: UserGroupIcon },
-];
+type NavLinksProps = {
+  isLoggedIn: boolean;
+};
 
-export default function NavLinks() {
+export default function NavLinks({ isLoggedIn }: NavLinksProps) {
   const pathname = usePathname();
+
+  const links = [
+    { name: 'Home', href: '/', icon: HomeIcon },
+    {
+      name: 'Uncover Your Bag',
+      href: '/dashboard',
+      icon: MagnifyingGlassIcon,
+    },
+    {
+      name: 'Serial Number Guide',
+      href: '/dashboard/guide',
+      icon: DocumentDuplicateIcon,
+    },
+
+    ...(isLoggedIn
+      ? [
+          {
+            name: 'My Bags',
+            href: '/dashboard/bags',
+            icon: UserGroupIcon,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <>
       {links.map((link) => {
         const LinkIcon = link.icon;
+
         return (
           <Link
             key={link.name}
@@ -49,3 +66,4 @@ export default function NavLinks() {
     </>
   );
 }
+
