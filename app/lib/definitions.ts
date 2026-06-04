@@ -100,3 +100,9 @@ export type User = {
   password: string;
 };
 
+export type UserBag = {
+  serial_number: string;
+  notes: string | null;
+  created_at: Date;
+};
+

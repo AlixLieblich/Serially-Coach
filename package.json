@@ -4,7 +4,8 @@
     "build": "next build",
     "dev": "next dev --turbopack",
     "start": "next start",
-    "seed:styles": "tsx scripts/seedStyles.ts"
+    "seed:styles": "tsx scripts/seedStyles.ts",
+    "db:user-bags": "tsx scripts/createUserBags.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

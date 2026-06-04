@@ -5,6 +5,7 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { lookupSerial } from '@/app/lib/actions';
 import type { SerialLookupResult } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
+import SaveBagForm from '@/app/ui/serial/save-bag-form';
 
 function isLookupResult(
   value: SerialLookupResult | string,
@@ -39,26 +40,33 @@ function LookupResultDisplay({ result }: { result: SerialLookupResult }) {
   );
 }
 
-export default function SerialLookupForm() {
+type SerialLookupFormProps = {
+  isLoggedIn: boolean;
+};
+
+export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) {
   const [result, setResult] = useState<SerialLookupResult | string | null>(
     null,
   );
+  const [lastSerial, setLastSerial] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const serial = String(formData.get('serial') ?? '');
+    const serial = String(formData.get('serial') ?? '').trim();
 
     setPending(true);
     setError(null);
     setResult(null);
+    setLastSerial(null);
 
     try {
       const response = await lookupSerial(serial);
       if (isLookupResult(response)) {
         setResult(response);
+        setLastSerial(serial);
       } else {
         setError(response);
       }
@@ -70,38 +78,46 @@ export default function SerialLookupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 max-w-md">
+    <div className="mt-4 max-w-md">
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
-        <label htmlFor="serial" className="mb-2 block text-sm font-medium">
-          Serial number
-        </label>
-        <div className="relative">
-          <input
-            id="serial"
-            name="serial"
-            type="text"
-            required
-            placeholder="e.g. K8P-9870"
-            className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm placeholder:text-gray-500 focus:border-black/50 focus:outline-none focus:ring-1 focus:ring-black/30"
-          />
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="serial" className="mb-2 block text-sm font-medium">
+            Serial number
+          </label>
+          <div className="relative">
+            <input
+              id="serial"
+              name="serial"
+              type="text"
+              required
+              placeholder="e.g. K8P-9870"
+              className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm placeholder:text-gray-500 focus:border-black/50 focus:outline-none focus:ring-1 focus:ring-black/30"
+            />
+            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
+          </div>
 
-        {result && isLookupResult(result) && (
-          <LookupResultDisplay result={result} />
-        )}
+          <div className="mt-6">
+            <Button type="submit" disabled={pending} aria-disabled={pending}>
+              {pending ? 'Looking up…' : 'Look up'}
+            </Button>
+          </div>
+        </form>
+
         {error && (
           <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
         )}
-      </div>
 
-      <div className="mt-6">
-        <Button type="submit" disabled={pending} aria-disabled={pending}>
-          {pending ? 'Looking up…' : 'Look up'}
-        </Button>
+        {result && isLookupResult(result) && (
+          <>
+            <LookupResultDisplay result={result} />
+            {isLoggedIn && lastSerial && (
+              <SaveBagForm serialNumber={lastSerial} />
+            )}
+          </>
+        )}
       </div>
-    </form>
+    </div>
   );
 }

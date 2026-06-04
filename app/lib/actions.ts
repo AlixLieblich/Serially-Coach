@@ -3,10 +3,11 @@
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
-import { signIn } from '@/auth';
+import { getAuthenticatedUserId, signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import type { SerialLookupResult } from './definitions';
 import { lookupSerial as lookupSerialInDb } from './serial';
+import { insertUserBag } from './user-bags';
 import { redirect } from 'next/navigation';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
@@ -74,6 +75,36 @@ export async function lookupSerial(
   serial: string,
 ): Promise<SerialLookupResult | string> {
   return lookupSerialInDb(serial);
+}
+
+export type SaveBagState = {
+  message?: string;
+  error?: string;
+};
+
+export async function saveUserBag(
+  _prevState: SaveBagState | undefined,
+  formData: FormData,
+): Promise<SaveBagState> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return { error: 'You must be logged in to save a bag.' };
+  }
+
+  const serialNumber = String(formData.get('serialNumber') ?? '').trim();
+  const notes = String(formData.get('notes') ?? '').trim() || null;
+
+  if (!serialNumber) {
+    return { error: 'Serial number is required.' };
+  }
+
+  try {
+    await insertUserBag(userId, serialNumber, notes);
+    return { message: 'Bag saved to My Bags.' };
+  } catch (error) {
+    console.error('Database Error:', error);
+    return { error: 'Failed to save bag. Please try again.' };
+  }
 }
 
 export async function authenticate(
