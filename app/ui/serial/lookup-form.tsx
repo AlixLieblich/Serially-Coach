@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { lookupSerial } from '@/app/lib/actions';
 import type { SerialLookupResult } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
 import LookupResultDisplay from '@/app/ui/serial/lookup-result';
+import AuthSavePrompt from '@/app/ui/serial/auth-save-prompt';
 import SaveBagForm from '@/app/ui/serial/save-bag-form';
 
 function isLookupResult(
@@ -16,21 +17,23 @@ function isLookupResult(
 
 type SerialLookupFormProps = {
   isLoggedIn: boolean;
+  restoreSerial?: string;
 };
 
-export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) {
+export default function SerialLookupForm({
+  isLoggedIn,
+  restoreSerial,
+}: SerialLookupFormProps) {
+  const [serialInput, setSerialInput] = useState(restoreSerial ?? '');
   const [result, setResult] = useState<SerialLookupResult | string | null>(
     null,
   );
   const [lastSerial, setLastSerial] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const hasRestoredRef = useRef(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const serial = String(formData.get('serial') ?? '').trim();
-
+  async function runLookup(serial: string) {
     setPending(true);
     setError(null);
     setResult(null);
@@ -51,6 +54,20 @@ export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) 
     }
   }
 
+  useEffect(() => {
+    if (!restoreSerial || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+    setSerialInput(restoreSerial);
+    void runLookup(restoreSerial);
+  }, [restoreSerial]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const serial = serialInput.trim();
+    if (!serial) return;
+    await runLookup(serial);
+  }
+
   return (
     <div className="mt-4 max-w-md">
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
@@ -64,6 +81,8 @@ export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) 
               name="serial"
               type="text"
               required
+              value={serialInput}
+              onChange={(event) => setSerialInput(event.target.value)}
               placeholder="e.g. K8P-9870"
               className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm placeholder:text-gray-500 focus:border-black/50 focus:outline-none focus:ring-1 focus:ring-black/30"
             />
@@ -86,12 +105,15 @@ export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) 
         {result && isLookupResult(result) && (
           <>
             <LookupResultDisplay result={result} className="mt-4 bg-white" />
-            {isLoggedIn && lastSerial && (
-              <SaveBagForm
-                serialNumber={lastSerial}
-                colorOptions={result.colorOptions}
-              />
-            )}
+            {lastSerial &&
+              (isLoggedIn ? (
+                <SaveBagForm
+                  serialNumber={lastSerial}
+                  colorOptions={result.colorOptions}
+                />
+              ) : (
+                <AuthSavePrompt serialNumber={lastSerial} />
+              ))}
           </>
         )}
       </div>

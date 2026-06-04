@@ -77,7 +77,9 @@ export default function LoginForm() {
     Don't have an account? Register here:
   </h1>
 
-  <Link href="/register">
+  <Link
+    href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+  >
     <Button className="mt-4 w-full">
       Register
       <ArrowRightIcon className="ml-auto h-5 w-5 text-gray-50" />
