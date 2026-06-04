@@ -22,13 +22,62 @@ Every Coach bag has a serial number (often on the interior wall of bag). Those c
 **Supported format (MVP):** `letter + digit + letter` + four digits — e.g. `K8P-9870` or `K8P9870`
 
 
-| Segment       | Meaning                    |
-| ------------- | -------------------------- |
-| 1st letter    | Month code → `month_codes` |
-| 1st digit     | Year code → `year_codes`   |
-| 3rd letter    | Reserved (not used yet)    |
-| Last 4 digits | Style number → `styles`    |
+| Segment       | Meaning                     |
+| ------------- | --------------------------- |
+| 1st letter    | Month code → `month_codes`  |
+| 1st digit     | Year code → `year_codes`    |
+| 3rd letter    | Reserved (not used yet)     |
+| Last 4 digits | Style number → `bag_styles` |
 
+
+---
+
+## 🔍 Serial lookup results
+
+A successful decode on **Uncover Your Bag** (`/dashboard`) returns:
+
+
+| Field                | Source                                                |
+| -------------------- | ----------------------------------------------------- |
+| **Month**            | `month_codes` (from 1st letter)                       |
+| **Year**             | `year_codes` (from 1st digit)                         |
+| **Style**            | `bag_styles.style_name` (from last 4 digits)          |
+| **Category**         | `bag_styles.category`                                 |
+| **Production start** | `bag_styles.production_start`                         |
+| **Production end**   | `bag_styles.production_end`                           |
+| **Colors**           | All color names via `bag_style_colors` → `bag_colors` |
+
+
+Results are shown in a labeled panel on the lookup form. Invalid formats or missing codes show friendly fallback text (e.g. `Unknown`) instead of failing the whole lookup.
+
+---
+
+## 🔐 Authentication
+
+User accounts are powered by **[NextAuth.js](https://next-auth.js.org/) v5** (Auth.js) with a **credentials** provider (email + password), **bcrypt** password hashing, and a `users` table in Postgres.
+
+
+| Feature        | Route / location            | Notes                                                 |
+| -------------- | --------------------------- | ----------------------------------------------------- |
+| **Sign in**    | `/login`                    | Email/password form → `authenticate` server action    |
+| **Register**   | `/register`                 | Create account, hash password, auto sign-in           |
+| **Sign out**   | Home + dashboard sidebar    | Server action calls `signOut` → redirects to `/`      |
+| **Session**    | `auth.ts`, `auth.config.ts` | `auth()` used in pages/components for logged-in state |
+| **Middleware** | `proxy.ts`                  | Next.js proxy runs Auth.js on matched routes          |
+
+
+**When signed in:**
+
+- Dashboard sidebar shows **Sign Out** (instead of **Sign In**)
+- **My Bags** nav link appears (`/dashboard/bags`)
+- Home page shows **View Your Bags** and **Sign out**
+
+**When signed out:**
+
+- Sidebar links to **Sign In**
+- Home page links to **Log in**
+
+Custom sign-in page is set in `auth.config.ts` (`pages.signIn: '/login'`). Route protection for private pages is still being tightened (middleware currently allows all routes through while auth is wired up).
 
 ---
 
@@ -43,26 +92,38 @@ Serially Coach does **not** call the Google Sheet at runtime.
 That Google Sheet includes style catalog tabs (style numbers, names, categories, dimensions, years in production, colors) and related serial-decode reference material. For this project:
 
 1. Style rows were exported and normalized into `data/styles.csv`.
-2. `pnpm seed:styles` loads that CSV into Postgres (`styles`, `colors`, `style_colors`).
+2. `pnpm seed:styles` loads that CSV into Postgres (`bag_styles`, `bag_colors`, `bag_style_colors`).
 3. Lookup tables (`month_codes`, `year_codes`, `place_codes`) are maintained in Postgres for serial decoding.
 
 So the “API” in production is a **Next.js server** querying Postgres via `app/lib/serial.ts` — the spreadsheet is the **source of truth for building the database**.
+
+### Main tables
+
+
+| Table                                        | Purpose                                                                           |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| `bag_styles`                                 | Style catalog (`bag_styles_id`, `style_number`, name, category, production years) |
+| `bag_colors`                                 | Color names (`bag_color_id`, `name`)                                              |
+| `bag_style_colors`                           | Many-to-many link (`bag_styles_id`, `bag_color_id`)                               |
+| `month_codes` / `year_codes` / `place_codes` | Serial decode lookups                                                             |
+| `users`                                      | Registered accounts (name, email, hashed password)                                |
+
 
 ---
 
 ## 🛠️ Tech stack
 
 
-| Category            | Tools                                                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Hosting**         | [Vercel](https://vercel.com/) ▲                                                                                                                             |
-| **Framework**       | [Next.js](https://nextjs.org/) (App Router), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)                                     |
-| **Styling**         | [Tailwind CSS](https://tailwindcss.com/), [@tailwindcss/forms](https://github.com/tailwindlabs/tailwindcss-forms), [Heroicons](https://heroicons.com/)      |
-| **Database**        | [Postgres](https://www.postgresql.org/) via [Neon](https://neon.tech/) (or any Postgres host), `[postgres](https://github.com/porsager/postgres)` JS client |
-| **Auth (planned)**  | [NextAuth.js](https://next-auth.js.org/) v5, `bcrypt` 🔐                                                                                                    |
-| **Data / scripts**  | `csv-parse`, `tsx`, `dotenv` for seeding styles from CSV                                                                                                    |
-| **Utilities**       | `clsx`, `zod` (validation, as features grow)                                                                                                                |
-| **Package manager** | [pnpm](https://pnpm.io/)                                                                                                                                    |
+| Category            | Tools                                                                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Hosting**         | [Vercel](https://vercel.com/) ▲                                                                                                                        |
+| **Framework**       | [Next.js](https://nextjs.org/) (App Router), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)                                |
+| **Styling**         | [Tailwind CSS](https://tailwindcss.com/), [@tailwindcss/forms](https://github.com/tailwindlabs/tailwindcss-forms), [Heroicons](https://heroicons.com/) |
+| **Database**        | [Postgres](https://www.postgresql.org/) via [Neon](https://neon.tech/), `[postgres](https://github.com/porsager/postgres)` JS client                   |
+| **Auth**            | [NextAuth.js](https://next-auth.js.org/) v5, `bcrypt`, `zod` 🔐                                                                                        |
+| **Data / scripts**  | `csv-parse`, `tsx`, `dotenv` for seeding styles from CSV                                                                                               |
+| **Utilities**       | `clsx`                                                                                                                                                 |
+| **Package manager** | [pnpm](https://pnpm.io/)                                                                                                                               |
 
 
 ---
@@ -72,21 +133,24 @@ So the “API” in production is a **Next.js server** querying Postgres via `ap
 ### V1 — In progress 🚧
 
 - Landing page and dashboard shell
-- Postgres schema for styles, colors, and lookup tables (`month_codes`, `year_codes`, etc.)
+- Postgres schema (`bag_styles`, `bag_colors`, `bag_style_colors`, lookup tables)
 - Seed script for styles from `data/styles.csv`
 - Serial lookup for simple format (`XXX-XXXX` / `XXXYYYY`)
+- Extended decode display (category, production years, colors)
+- User registration, login, sign out (NextAuth + `users` table)
 - Place-of-manufacture decoding (`place_codes`) 📍
 - Serial number guide content (`/dashboard/guide`) 📚
+- Save bags to account (`/dashboard/bags` — UI stub exists)
 
 ### V2 🔎
 
+- Full “My Bags” persistence (saved serials per user)
+- Stricter protected routes for authenticated-only pages
+
+### V3
+
 - Decode **all** Coach serial number formats (not just the simple pattern)
 - Broader historical code tables and format detection
-
-### V3 🔐
-
-- User accounts (save “My Bags”)
-- Login / auth wired end-to-end
 
 ### V4 — Ideas 💡
 
@@ -110,7 +174,10 @@ Create a `.env` file in the project root:
 
 ```env
 POSTGRES_URL=your_postgres_connection_string
+AUTH_SECRET=your_auth_secret   # generate with: openssl rand -base64 32
 ```
+
+`AUTH_SECRET` is required for NextAuth session signing in production.
 
 ### 💻 Install and run
 
@@ -121,19 +188,26 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-- **Home** — `/`
-- **Serial lookup** — `/dashboard`
-- **Login (UI shell)** — `/login`
+
+| Route              | Description                                         |
+| ------------------ | --------------------------------------------------- |
+| `/`                | Landing page (login / sign out when session exists) |
+| `/dashboard`       | Serial number lookup                                |
+| `/login`           | Sign in                                             |
+| `/register`        | Create account                                      |
+| `/dashboard/guide` | Serial number guide (content TBD)                   |
+| `/dashboard/bags`  | My Bags (logged-in users; persistence TBD)          |
+
 
 ### 🌱 Seed style data
 
-Loads `data/styles.csv` into `styles`, `colors`, and `style_colors`:
+Loads `data/styles.csv` into `bag_styles`, `bag_colors`, and `bag_style_colors`:
 
 ```bash
 pnpm seed:styles
 ```
 
-Lookup tables (`month_codes`, `year_codes`, `place_codes`) should be populated separately in your database for decode results to resolve fully.
+Lookup tables (`month_codes`, `year_codes`, `place_codes`) and the `users` table should exist in your database for full app functionality.
 
 ---
 
@@ -141,17 +215,22 @@ Lookup tables (`month_codes`, `year_codes`, `place_codes`) should be populated s
 
 ```
 app/
-  page.tsx                 # Landing page
-  login/                   # Login page (form UI; auth not wired yet)
-  dashboard/               # Serial lookup, guide, bags (v3 stub)
+  page.tsx                 # Landing (auth-aware CTAs)
+  login/                   # Sign-in page
+  register/                # Registration page
+  dashboard/               # Serial lookup, guide, bags
   lib/
     serial.ts              # Parse serial + Postgres lookups
-    actions.ts             # Server actions for the lookup form
-    definitions.ts         # TypeScript types for DB tables
+    actions.ts             # Server actions (lookup, auth, register)
+    definitions.ts         # Types (DB tables, SerialLookupResult, User)
   ui/
-    serial/lookup-form.tsx # Client lookup form
+    serial/lookup-form.tsx # Lookup form + results panel
     login-form.tsx
-    dashboard/             # Sidebar navigation
+    register-form.tsx
+    dashboard/             # Sidebar, nav (Sign In/Out, My Bags)
+auth.ts                    # NextAuth instance + credentials provider
+auth.config.ts             # Auth pages, callbacks, middleware config
+proxy.ts                   # Auth middleware (Next.js proxy)
 data/
   styles.csv               # Style seed data
 scripts/
@@ -163,12 +242,12 @@ scripts/
 ## ⚡ Scripts
 
 
-| Command            | Description                  |
-| ------------------ | ---------------------------- |
-| `pnpm dev`         | Start dev server (Turbopack) |
-| `pnpm build`       | Production build             |
-| `pnpm start`       | Run production server        |
-| `pnpm seed:styles` | Seed styles/colors from CSV  |
+| Command            | Description                     |
+| ------------------ | ------------------------------- |
+| `pnpm dev`         | Start dev server (Turbopack)    |
+| `pnpm build`       | Production build                |
+| `pnpm start`       | Run production server           |
+| `pnpm seed:styles` | Seed bag styles/colors from CSV |
 
 
 ---

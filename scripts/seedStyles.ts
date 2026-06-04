@@ -9,7 +9,7 @@ import 'dotenv/config';
  * Each row in the CSV results in multiple sequential database queries:
  * - inserting/upserting a style
  * - inserting or fetching each color
- * - inserting entries into the style_colors join table
+ * - inserting entries into the bag_style_colors join table
  *
  * Because these operations are executed one-by-one (not in bulk or parallel),
  * the script performs thousands of individual network round-trips to the database.
@@ -54,8 +54,8 @@ const records: StyleCsvRow[] = parse(file, {
 async function seedStyles() {
   // Create tables
   await sql`
-    CREATE TABLE IF NOT EXISTS styles (
-      id SERIAL PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS bag_styles (
+      bag_styles_id SERIAL PRIMARY KEY,
       style_number TEXT UNIQUE NOT NULL,
       style_name TEXT,
       category TEXT,
@@ -66,17 +66,17 @@ async function seedStyles() {
   `;
 
   await sql`
-    CREATE TABLE IF NOT EXISTS colors (
-      id SERIAL PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS bag_colors (
+      bag_color_id SERIAL PRIMARY KEY,
       name TEXT UNIQUE NOT NULL
     );
   `;
 
   await sql`
-    CREATE TABLE IF NOT EXISTS style_colors (
-      style_id INTEGER NOT NULL REFERENCES styles(id) ON DELETE CASCADE,
-      color_id INTEGER NOT NULL REFERENCES colors(id) ON DELETE CASCADE,
-      PRIMARY KEY (style_id, color_id)
+    CREATE TABLE IF NOT EXISTS bag_style_colors (
+      bag_styles_id INTEGER NOT NULL REFERENCES bag_styles(bag_styles_id) ON DELETE CASCADE,
+      bag_color_id INTEGER NOT NULL REFERENCES bag_colors(bag_color_id) ON DELETE CASCADE,
+      PRIMARY KEY (bag_styles_id, bag_color_id)
     );
   `;
 
@@ -94,7 +94,7 @@ async function seedStyles() {
 
     // Insert / update style
     const insertedStyle = await sql`
-      INSERT INTO styles (
+      INSERT INTO bag_styles (
         style_number,
         style_name,
         category,
@@ -117,10 +117,10 @@ async function seedStyles() {
         production_start = EXCLUDED.production_start,
         production_end = EXCLUDED.production_end,
         notes = EXCLUDED.notes
-      RETURNING id
+      RETURNING bag_styles_id
     `;
 
-    const styleId = insertedStyle[0].id;
+    const styleId = insertedStyle[0].bag_styles_id;
 
     // Colors
     const colors = row.Colors
@@ -133,18 +133,18 @@ async function seedStyles() {
 
       // Insert color safely
       const insertedColor = await sql`
-        INSERT INTO colors (name)
+        INSERT INTO bag_colors (name)
         VALUES (${colorName})
         ON CONFLICT (name)
         DO UPDATE SET name = EXCLUDED.name
-        RETURNING id
+        RETURNING bag_color_id
       `;
 
-      const colorId = insertedColor[0].id;
+      const colorId = insertedColor[0].bag_color_id;
 
       // Link table
       await sql`
-        INSERT INTO style_colors (style_id, color_id)
+        INSERT INTO bag_style_colors (bag_styles_id, bag_color_id)
         VALUES (${styleId}, ${colorId})
         ON CONFLICT DO NOTHING
       `;

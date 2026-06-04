@@ -1,13 +1,13 @@
 // TypeScript shapes for Serially Coach’s Postgres data and UI.
 // Use these in serial.ts, server actions, and components so queries and props
-// stay aligned with tables like styles, month_codes, year_codes, and place_codes.
+// stay aligned with tables like bag_styles, month_codes, year_codes, and place_codes.
 
 // =========================
 // CORE TABLES
 // =========================
 
-export type Style = {
-  id: number;
+export type BagStyle = {
+  bag_styles_id: number;
   style_number: string;
   style_name: string | null;
   category: string | null;
@@ -21,9 +21,9 @@ export type BagColor = {
   name: string;
 };
 
-export type StyleColor = {
-  style_id: number;
-  color_id: number; // references bag_colors.bag_color_id
+export type BagStyleColor = {
+  bag_styles_id: number; // references bag_styles.bag_styles_id
+  bag_color_id: number; // references bag_colors.bag_color_id
 };
 
 // =========================
@@ -52,7 +52,7 @@ export type PlaceCode = {
 
 // Style with resolved colors (for frontend display)
 export type StyleWithColors = {
-  id: number;
+  bag_styles_id: number;
   style_number: string;
   style_name: string | null;
   category: string | null;
@@ -64,7 +64,7 @@ export type StyleWithColors = {
 
 // Lightweight dropdown / selector type
 export type StyleOption = {
-  id: number;
+  bag_styles_id: number;
   style_number: string;
   style_name: string | null;
 };

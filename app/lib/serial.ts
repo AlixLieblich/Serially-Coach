@@ -86,11 +86,11 @@ export async function lookupSerial(
               FILTER (WHERE bc.name IS NOT NULL),
             ARRAY[]::text[]
           ) AS colors
-        FROM styles s
-        LEFT JOIN style_colors sc ON sc.style_id = s.id
-        LEFT JOIN bag_colors bc ON bc.bag_color_id = sc.color_id
+        FROM bag_styles s
+        LEFT JOIN bag_style_colors sc ON sc.bag_styles_id = s.bag_styles_id
+        LEFT JOIN bag_colors bc ON bc.bag_color_id = sc.bag_color_id
         WHERE s.style_number = ${styleNumber}
-        GROUP BY s.id, s.style_name, s.category, s.production_start, s.production_end
+        GROUP BY s.bag_styles_id, s.style_name, s.category, s.production_start, s.production_end
         LIMIT 1
       `,
     ]);
