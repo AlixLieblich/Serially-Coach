@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import type { SerialLookupResult } from './definitions';
 import { lookupSerial as lookupSerialInDb } from './serial';
 import { redirect } from 'next/navigation';
 
@@ -69,7 +70,9 @@ export async function register(
   }
 }
 
-export async function lookupSerial(serial: string): Promise<string> {
+export async function lookupSerial(
+  serial: string,
+): Promise<SerialLookupResult | string> {
   return lookupSerialInDb(serial);
 }
 

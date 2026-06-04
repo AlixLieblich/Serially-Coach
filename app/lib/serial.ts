@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { MonthCode, Style, YearCode } from './definitions';
+import { MonthCode, SerialLookupResult, YearCode } from './definitions';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -40,7 +40,21 @@ function parseSerial(input: string): ParsedSerial | { error: string } {
   };
 }
 
-export async function lookupSerial(serial: string): Promise<string> {
+type StyleLookupRow = {
+  style_name: string | null;
+  category: string | null;
+  production_start: number | null;
+  production_end: number | null;
+  colors: string[];
+};
+
+function formatProductionYear(year: number | null): string {
+  return year != null ? String(year) : 'Unknown';
+}
+
+export async function lookupSerial(
+  serial: string,
+): Promise<SerialLookupResult | string> {
   const trimmed = serial.trim();
   if (!trimmed) {
     return 'Enter a serial number.';
@@ -61,21 +75,54 @@ export async function lookupSerial(serial: string): Promise<string> {
       sql<Pick<YearCode, 'year'>[]>`
         SELECT year FROM year_codes WHERE code = ${yearCode} LIMIT 1
       `,
-      sql<Pick<Style, 'style_name' | 'category'>[]>`
-        SELECT style_name, category FROM styles WHERE style_number = ${styleNumber} LIMIT 1
+      sql<StyleLookupRow[]>`
+        SELECT
+          s.style_name,
+          s.category,
+          s.production_start,
+          s.production_end,
+          COALESCE(
+            array_agg(DISTINCT bc.name ORDER BY bc.name)
+              FILTER (WHERE bc.name IS NOT NULL),
+            ARRAY[]::text[]
+          ) AS colors
+        FROM styles s
+        LEFT JOIN style_colors sc ON sc.style_id = s.id
+        LEFT JOIN bag_colors bc ON bc.bag_color_id = sc.color_id
+        WHERE s.style_number = ${styleNumber}
+        GROUP BY s.id, s.style_name, s.category, s.production_start, s.production_end
+        LIMIT 1
       `,
     ]);
 
     const month = monthRows[0]?.month_name ?? `Unknown (code "${monthCode}")`;
-    const year = yearRows[0]?.year ?? `Unknown (code "${yearCode}")`;
+    const year =
+      yearRows[0]?.year != null
+        ? String(yearRows[0].year)
+        : `Unknown (code "${yearCode}")`;
     const style = styleRows[0];
 
-    const styleLine = style
-      ? [style.style_name, style.category].filter(Boolean).join(' · ') ||
-        styleNumber
-      : `Unknown (style #${styleNumber})`;
+    if (!style) {
+      return {
+        month,
+        year,
+        style: `Unknown (style #${styleNumber})`,
+        category: 'Unknown',
+        productionStart: 'Unknown',
+        productionEnd: 'Unknown',
+        colors: [],
+      };
+    }
 
-    return `Month: ${month}\nYear: ${year}\nStyle: ${styleLine}`;
+    return {
+      month,
+      year,
+      style: style.style_name ?? `Unknown (style #${styleNumber})`,
+      category: style.category ?? 'Unknown',
+      productionStart: formatProductionYear(style.production_start),
+      productionEnd: formatProductionYear(style.production_end),
+      colors: style.colors,
+    };
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to look up serial.');

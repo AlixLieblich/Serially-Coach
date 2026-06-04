@@ -21,12 +21,14 @@ Every Coach bag has a serial number (often on the interior wall of bag). Those c
 
 **Supported format (MVP):** `letter + digit + letter` + four digits — e.g. `K8P-9870` or `K8P9870`
 
-| Segment | Meaning |
-|--------|---------|
-| 1st letter | Month code → `month_codes` |
-| 1st digit | Year code → `year_codes` |
-| 3rd letter | Reserved (not used yet) |
-| Last 4 digits | Style number → `styles` |
+
+| Segment       | Meaning                    |
+| ------------- | -------------------------- |
+| 1st letter    | Month code → `month_codes` |
+| 1st digit     | Year code → `year_codes`   |
+| 3rd letter    | Reserved (not used yet)    |
+| Last 4 digits | Style number → `styles`    |
+
 
 ---
 
@@ -50,16 +52,18 @@ So the “API” in production is a **Next.js server** querying Postgres via `ap
 
 ## 🛠️ Tech stack
 
-| Category | Tools |
-|----------|--------|
-| **Hosting** | [Vercel](https://vercel.com/) ▲ |
-| **Framework** | [Next.js](https://nextjs.org/) (App Router), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/) |
-| **Styling** | [Tailwind CSS](https://tailwindcss.com/), [@tailwindcss/forms](https://github.com/tailwindlabs/tailwindcss-forms), [Heroicons](https://heroicons.com/) |
-| **Database** | [Postgres](https://www.postgresql.org/) via [Neon](https://neon.tech/) (or any Postgres host), [`postgres`](https://github.com/porsager/postgres) JS client |
-| **Auth (planned)** | [NextAuth.js](https://next-auth.js.org/) v5, `bcrypt` 🔐 |
-| **Data / scripts** | `csv-parse`, `tsx`, `dotenv` for seeding styles from CSV |
-| **Utilities** | `clsx`, `zod` (validation, as features grow) |
-| **Package manager** | [pnpm](https://pnpm.io/) |
+
+| Category            | Tools                                                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hosting**         | [Vercel](https://vercel.com/) ▲                                                                                                                             |
+| **Framework**       | [Next.js](https://nextjs.org/) (App Router), [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)                                     |
+| **Styling**         | [Tailwind CSS](https://tailwindcss.com/), [@tailwindcss/forms](https://github.com/tailwindlabs/tailwindcss-forms), [Heroicons](https://heroicons.com/)      |
+| **Database**        | [Postgres](https://www.postgresql.org/) via [Neon](https://neon.tech/) (or any Postgres host), `[postgres](https://github.com/porsager/postgres)` JS client |
+| **Auth (planned)**  | [NextAuth.js](https://next-auth.js.org/) v5, `bcrypt` 🔐                                                                                                    |
+| **Data / scripts**  | `csv-parse`, `tsx`, `dotenv` for seeding styles from CSV                                                                                                    |
+| **Utilities**       | `clsx`, `zod` (validation, as features grow)                                                                                                                |
+| **Package manager** | [pnpm](https://pnpm.io/)                                                                                                                                    |
+
 
 ---
 
@@ -67,12 +71,12 @@ So the “API” in production is a **Next.js server** querying Postgres via `ap
 
 ### V1 — In progress 🚧
 
-- [x] Landing page and dashboard shell
-- [x] Postgres schema for styles, colors, and lookup tables (`month_codes`, `year_codes`, etc.)
-- [x] Seed script for styles from `data/styles.csv`
-- [x] Serial lookup for simple format (`XXX-XXXX` / `XXXYYYY`)
-- [ ] Place-of-manufacture decoding (`place_codes`) 📍
-- [ ] Serial number guide content (`/dashboard/guide`) 📚
+- Landing page and dashboard shell
+- Postgres schema for styles, colors, and lookup tables (`month_codes`, `year_codes`, etc.)
+- Seed script for styles from `data/styles.csv`
+- Serial lookup for simple format (`XXX-XXXX` / `XXXYYYY`)
+- Place-of-manufacture decoding (`place_codes`) 📍
+- Serial number guide content (`/dashboard/guide`) 📚
 
 ### V2 🔎
 
@@ -158,12 +162,14 @@ scripts/
 
 ## ⚡ Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server (Turbopack) |
-| `pnpm build` | Production build |
-| `pnpm start` | Run production server |
-| `pnpm seed:styles` | Seed styles/colors from CSV |
+
+| Command            | Description                  |
+| ------------------ | ---------------------------- |
+| `pnpm dev`         | Start dev server (Turbopack) |
+| `pnpm build`       | Production build             |
+| `pnpm start`       | Run production server        |
+| `pnpm seed:styles` | Seed styles/colors from CSV  |
+
 
 ---
 

@@ -16,14 +16,14 @@ export type Style = {
   notes: string | null;
 };
 
-export type Color = {
-  id: number;
+export type BagColor = {
+  bag_color_id: number;
   name: string;
 };
 
 export type StyleColor = {
   style_id: number;
-  color_id: number;
+  color_id: number; // references bag_colors.bag_color_id
 };
 
 // =========================
@@ -80,6 +80,16 @@ export type StyleForm = {
   production_start?: number;
   production_end?: number;
   notes?: string;
+  colors: string[];
+};
+
+export type SerialLookupResult = {
+  month: string;
+  year: string;
+  style: string;
+  category: string;
+  productionStart: string;
+  productionEnd: string;
   colors: string[];
 };
 
