@@ -5,39 +5,13 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { lookupSerial } from '@/app/lib/actions';
 import type { SerialLookupResult } from '@/app/lib/definitions';
 import { Button } from '@/app/ui/button';
+import LookupResultDisplay from '@/app/ui/serial/lookup-result';
 import SaveBagForm from '@/app/ui/serial/save-bag-form';
 
 function isLookupResult(
   value: SerialLookupResult | string,
 ): value is SerialLookupResult {
   return typeof value === 'object';
-}
-
-function LookupResultDisplay({ result }: { result: SerialLookupResult }) {
-  const rows: { label: string; value: string }[] = [
-    { label: 'Month', value: result.month },
-    { label: 'Year', value: result.year },
-    { label: 'Style', value: result.style },
-    { label: 'Category', value: result.category },
-    { label: 'Production start', value: result.productionStart },
-    { label: 'Production end', value: result.productionEnd },
-    {
-      label: 'Colors',
-      value:
-        result.colors.length > 0 ? result.colors.join(', ') : 'Unknown',
-    },
-  ];
-
-  return (
-    <dl className="mt-4 space-y-2 rounded-md bg-white p-3 text-sm text-gray-900">
-      {rows.map(({ label, value }) => (
-        <div key={label} className="grid grid-cols-[9rem_1fr] gap-2">
-          <dt className="font-medium text-gray-600">{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
-  );
 }
 
 type SerialLookupFormProps = {
@@ -111,9 +85,12 @@ export default function SerialLookupForm({ isLoggedIn }: SerialLookupFormProps) 
 
         {result && isLookupResult(result) && (
           <>
-            <LookupResultDisplay result={result} />
+            <LookupResultDisplay result={result} className="mt-4 bg-white" />
             {isLoggedIn && lastSerial && (
-              <SaveBagForm serialNumber={lastSerial} />
+              <SaveBagForm
+                serialNumber={lastSerial}
+                colorOptions={result.colorOptions}
+              />
             )}
           </>
         )}

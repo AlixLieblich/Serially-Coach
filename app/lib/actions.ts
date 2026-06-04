@@ -7,8 +7,9 @@ import { getAuthenticatedUserId, signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 import type { SerialLookupResult } from './definitions';
 import { lookupSerial as lookupSerialInDb } from './serial';
-import { insertUserBag } from './user-bags';
-import { redirect } from 'next/navigation';
+import { parseBagColorId } from './parse-bag-color';
+import { insertUserBag, updateUserBag } from './user-bags';
+import { revalidatePath } from 'next/cache';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -77,15 +78,15 @@ export async function lookupSerial(
   return lookupSerialInDb(serial);
 }
 
-export type SaveBagState = {
+export type BagActionState = {
   message?: string;
   error?: string;
 };
 
 export async function saveUserBag(
-  _prevState: SaveBagState | undefined,
+  _prevState: BagActionState | undefined,
   formData: FormData,
-): Promise<SaveBagState> {
+): Promise<BagActionState> {
   const userId = await getAuthenticatedUserId();
   if (!userId) {
     return { error: 'You must be logged in to save a bag.' };
@@ -93,17 +94,45 @@ export async function saveUserBag(
 
   const serialNumber = String(formData.get('serialNumber') ?? '').trim();
   const notes = String(formData.get('notes') ?? '').trim() || null;
+  const bagColorId = parseBagColorId(formData.get('bagColorId'));
 
   if (!serialNumber) {
     return { error: 'Serial number is required.' };
   }
 
   try {
-    await insertUserBag(userId, serialNumber, notes);
+    await insertUserBag(userId, serialNumber, notes, bagColorId);
     return { message: 'Bag saved to My Bags.' };
   } catch (error) {
     console.error('Database Error:', error);
     return { error: 'Failed to save bag. Please try again.' };
+  }
+}
+
+export async function updateSavedBag(
+  _prevState: BagActionState | undefined,
+  formData: FormData,
+): Promise<BagActionState> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
+    return { error: 'You must be logged in to update this bag.' };
+  }
+
+  const serialNumber = String(formData.get('serialNumber') ?? '').trim();
+  const notes = String(formData.get('notes') ?? '').trim() || null;
+  const bagColorId = parseBagColorId(formData.get('bagColorId'));
+
+  if (!serialNumber) {
+    return { error: 'Serial number is required.' };
+  }
+
+  try {
+    await updateUserBag(userId, serialNumber, notes, bagColorId);
+    revalidatePath('/dashboard/bags');
+    return { message: 'Bag updated.' };
+  } catch (error) {
+    console.error('Database Error:', error);
+    return { error: 'Failed to update bag. Please try again.' };
   }
 }
 

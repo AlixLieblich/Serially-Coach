@@ -1,5 +1,10 @@
 import postgres from 'postgres';
-import { MonthCode, SerialLookupResult, YearCode } from './definitions';
+import {
+  MonthCode,
+  SerialLookupResult,
+  StyleColorOption,
+  YearCode,
+} from './definitions';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -52,6 +57,19 @@ function formatProductionYear(year: number | null): string {
   return year != null ? String(year) : 'Unknown';
 }
 
+async function fetchStyleColorOptions(
+  styleNumber: string,
+): Promise<StyleColorOption[]> {
+  return sql<StyleColorOption[]>`
+    SELECT bc.bag_color_id, bc.name
+    FROM bag_styles s
+    INNER JOIN bag_style_colors sc ON sc.bag_styles_id = s.bag_styles_id
+    INNER JOIN bag_colors bc ON bc.bag_color_id = sc.bag_color_id
+    WHERE s.style_number = ${styleNumber}
+    ORDER BY bc.name
+  `;
+}
+
 export async function lookupSerial(
   serial: string,
 ): Promise<SerialLookupResult | string> {
@@ -101,6 +119,7 @@ export async function lookupSerial(
         ? String(yearRows[0].year)
         : `Unknown (code "${yearCode}")`;
     const style = styleRows[0];
+    const colorOptions = await fetchStyleColorOptions(styleNumber);
 
     if (!style) {
       return {
@@ -111,6 +130,7 @@ export async function lookupSerial(
         productionStart: 'Unknown',
         productionEnd: 'Unknown',
         colors: [],
+        colorOptions,
       };
     }
 
@@ -122,6 +142,7 @@ export async function lookupSerial(
       productionStart: formatProductionYear(style.production_start),
       productionEnd: formatProductionYear(style.production_end),
       colors: style.colors,
+      colorOptions,
     };
   } catch (error) {
     console.error('Database Error:', error);

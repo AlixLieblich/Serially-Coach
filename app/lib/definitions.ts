@@ -83,6 +83,11 @@ export type StyleForm = {
   colors: string[];
 };
 
+export type StyleColorOption = {
+  bag_color_id: number;
+  name: string;
+};
+
 export type SerialLookupResult = {
   month: string;
   year: string;
@@ -91,6 +96,7 @@ export type SerialLookupResult = {
   productionStart: string;
   productionEnd: string;
   colors: string[];
+  colorOptions: StyleColorOption[];
 };
 
 export type User = {
@@ -103,6 +109,13 @@ export type User = {
 export type UserBag = {
   serial_number: string;
   notes: string | null;
+  bag_color_id: number | null;
+  color_name: string | null;
   created_at: Date;
+};
+
+export type SavedBagWithDetails = UserBag & {
+  details: SerialLookupResult | null;
+  decodeError?: string;
 };
 

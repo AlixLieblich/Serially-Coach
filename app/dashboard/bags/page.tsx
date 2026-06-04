@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth, getAuthenticatedUserId } from '@/auth';
-import { fetchUserBags } from '@/app/lib/user-bags';
+import { fetchUserBagsWithDetails } from '@/app/lib/user-bags';
+import SavedBagForm from '@/app/ui/dashboard/saved-bag-form';
+import LookupResultDisplay from '@/app/ui/serial/lookup-result';
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat('en-US', {
@@ -19,10 +21,10 @@ export default async function Page() {
     redirect('/login');
   }
 
-  const bags = await fetchUserBags(userId);
+  const bags = await fetchUserBagsWithDetails(userId);
 
   return (
-    <main>
+    <main className="max-w-2xl">
       <h1 className="mb-2 text-xl font-semibold">My Bags</h1>
       <p className="mb-6 text-sm text-gray-600">
         Saved serial numbers for{' '}
@@ -40,19 +42,43 @@ export default async function Page() {
           </Link>
         </div>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-6">
           {bags.map((bag) => (
             <li
               key={`${bag.serial_number}-${bag.created_at}`}
               className="rounded-md border border-gray-200 bg-white p-4 text-sm"
             >
-              <p className="font-medium text-gray-900">{bag.serial_number}</p>
-              {bag.notes && (
-                <p className="mt-1 text-gray-700">{bag.notes}</p>
+              <div className="border-b border-gray-100 pb-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Serial number
+                </p>
+                <p className="text-base font-semibold text-gray-900">
+                  {bag.serial_number}
+                </p>
+                <p className="mt-1 text-sm text-gray-700">
+                  <span className="font-medium text-gray-600">
+                    Your color:{' '}
+                  </span>
+                  {bag.color_name ?? 'Not specified'}
+                </p>
+                <SavedBagForm
+                  serialNumber={bag.serial_number}
+                  initialNotes={bag.notes ?? ''}
+                  initialBagColorId={bag.bag_color_id}
+                  colorOptions={bag.details?.colorOptions ?? []}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Saved {formatDate(bag.created_at)}
+                </p>
+              </div>
+
+              {bag.details ? (
+                <LookupResultDisplay result={bag.details} className="mt-3" />
+              ) : (
+                <p className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+                  {bag.decodeError ?? 'Could not decode this serial number.'}
+                </p>
               )}
-              <p className="mt-2 text-xs text-gray-500">
-                Saved {formatDate(bag.created_at)}
-              </p>
             </li>
           ))}
         </ul>
